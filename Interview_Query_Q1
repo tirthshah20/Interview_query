@@ -1,0 +1,21 @@
+with cte as(
+    select 
+    user_id,
+    url,
+    created_at,row_number() over(partition by user_id,url order by created_at) as rn
+from events)
+,
+cte2 as(
+    select count(distinct user_id) as cnt from(
+    select user_id 
+from cte
+group by user_id,url,DATE(created_at)-rn
+having count(*)>=7)b
+)
+,
+cte3 as(
+    select count(distinct user_id) as total from events
+)
+
+select round(COALESCE((cte2.cnt*1.0/cte3.total),0),2) as percent_of_users
+from cte2,cte3
